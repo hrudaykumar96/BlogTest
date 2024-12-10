@@ -1,0 +1,205 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Home</title>
+    <style>
+      .messages {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 5000;
+        text-align: center;
+        width: 100%;
+      }
+    </style>
+    <!-- bootstrap css -->
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}" />
+  </head>
+  <body>
+
+    <div class="messages">
+      {% if messages %}
+      <div class="row">
+        {% for message in messages %}
+        <div {% if message.tags %} class="alert {{ message.tags }} alert-dismissible fade show text-center w-100" role="alert" {% endif %}>
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- header -->
+
+    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+        <div class="container">
+          <a class="navbar-brand" href="{% url 'home' %}">Blog</a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+              <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="{% url 'home' %}">Home</a>
+              </li>
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                 <span class="text-capitalize">{{request.user.name}}</span>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+
+      <!-- section -->
+       <section class="min-vh-100 w-100" style="background-color: rgb(217, 217, 217);">
+        <div class="container pt-5 pb-5">
+          {% if request.user.is_superuser %}
+          <button type="button" class="btn btn-success m-1" data-bs-toggle="modal" data-bs-target="#addblogModal">Create Blog</button>
+          {% endif %}
+          {% if blogs %}  
+          <div class="row row-cols-1 row-cols-md-3 g-4">
+              {% for blog in blogs %}
+                <div class="col">
+                  <div class="card">
+                    <img src="{{ blog.images.url }}" alt="blogimage" class="card-img-top">
+                    <div class="card-body">
+                      <div class="d-flex justify-content-between flex-wrap">
+                      <h5 class="card-title">{{blog.title}}</h5>
+                      <div class="buttons">
+                        {% if request.user.is_superuser %}
+                      <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#updateblogModal" data-id={{blog.id}} data-title={{blog.title}} data-description={{blog.description}} onclick="sendupdatedata(this)">Update</button>
+                      <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteblogModal" data-id={{blog.id}} onclick="senddeletedata(this)">Delete</button>
+                    {% endif %}
+                    </div>
+                    </div>
+                      <p class="card-text" style="text-align: justify;">{{blog.description}}</p>
+                    </div>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+              {% else %}
+              <p class="text-center text-danger w-100">No Blogs Found</p>
+              {% endif %}
+        </div>
+       </section>
+
+      <!-- footer -->
+       <footer class="bg-dark text-light text-center p-1">
+        CopyRight @ All Rights Reserved
+       </footer>
+
+       <!-- add blog -->
+
+<div class="modal fade" id="addblogModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form action="{% url 'create' %}" method="post" enctype="multipart/form-data">{% csrf_token %}
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalLabel">Add Blog</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+          <div class="mb-3">
+            <label for="title" class="form-label">Title</label><span class="text-danger">*</span>
+            <input type="text" placeholder="Enter Title" class="form-control" required name="title">
+          </div>
+          <div class="mb-3">
+            <label for="title" class="form-label">Title</label><span class="text-danger">*</span>
+            <textarea class="form-control" placeholder="Enter Description" required name="description"></textarea>
+          </div>
+          <div class="mb-3">
+            <label for="formFile" class="form-label">Upload Image</label><span class="text-danger">*</span>
+            <input class="form-control" type="file" id="formFile" required name="images">
+          </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="submit" class="btn btn-primary">Add Blog</button>
+      </div>
+    </form>
+    </div>
+  </div>
+</div>
+
+<!-- update blog -->
+<div class="modal fade" id="updateblogModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form action="{% url 'update' %}" method="post" enctype="multipart/form-data">{% csrf_token %}
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalLabel">Update Blog</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" name="id" class="blogid" hidden>
+          <div class="mb-3">
+            <label for="title" class="form-label">Title</label><span class="text-danger">*</span>
+            <input type="text" placeholder="Enter Title" class="form-control updateblogtitle" required name="title">
+          </div>
+          <div class="mb-3">
+            <label for="title" class="form-label">Title</label><span class="text-danger">*</span>
+            <textarea class="form-control updateblogdescription" placeholder="Enter Description" required name="description"></textarea>
+          </div>
+          <div class="mb-3">
+            <label for="formFile" class="form-label">Upload Image</label><span class="text-danger">*</span>
+            <input class="form-control updateblogimage" type="file" id="formFile" name="images">
+          </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="submit" class="btn btn-primary">Update Blog</button>
+      </div>
+    </form>
+    </div>
+  </div>
+</div>
+
+<!-- delete blog -->
+<div class="modal fade" id="deleteblogModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form action="{% url 'delete' %}" method="post" enctype="multipart/form-data">{% csrf_token %}
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalLabel">Delete Blog</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" name="id" class="deleteblogid" hidden>
+          <p>Are you sure do you really want to delete blog ?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="submit" class="btn btn-danger">Delete</button>
+      </div>
+    </form>
+    </div>
+  </div>
+</div>
+
+        <!-- bootstrap js -->
+        <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+
+        <script>
+          const sendupdatedata=(button)=>{
+            document.querySelector('.updateblogtitle').value = button.getAttribute('data-title');
+            document.querySelector('.updateblogdescription').value = button.getAttribute('data-description');      
+            document.querySelector('.blogid').value = button.getAttribute('data-id');      
+          }
+
+          const senddeletedata=(button)=>{
+            document.querySelector('.deleteblogid').value = button.getAttribute('data-id');  
+          }
+        </script>
+  </body>
+</html>
